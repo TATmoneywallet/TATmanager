@@ -194,7 +194,7 @@ function renderUsers(users) {
   const tbody = document.getElementById('usersTableBody');
   
   if (!users.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="loading">کاربری وجود ندارد</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="loading">کاربری وجود ندارد</td></tr>';
     return;
   }
 
@@ -208,6 +208,17 @@ function renderUsers(users) {
         <span class="badge ${u.is_blocked ? 'badge-danger' : 'badge-success'}">
           ${u.is_blocked ? 'مسدود' : 'فعال'}
         </span>
+      </td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-icon view" onclick="viewUser('${u.id}')" title="مشاهده">👁</button>
+          <button class="btn-icon edit" onclick="editBalance('${u.id}')" title="ویرایش موجودی">✏️</button>
+          <button class="btn-icon ${u.is_blocked ? 'unblock' : 'block'}" 
+                  onclick="toggleBlock('${u.id}', ${!u.is_blocked})" 
+                  title="${u.is_blocked ? 'آزاد' : 'قفل'}">
+            ${u.is_blocked ? '🔓' : '🔒'}
+          </button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -406,3 +417,165 @@ function refreshData() {
   else if (currentPage === 'prices') loadPrices();
   showToast('بروزرسانی شد 🔄', 'success');
 }
+
+// ═══════════════════════════════════════
+// USER MANAGEMENT
+// ═══════════════════════════════════════
+
+let currentUserId = null;
+let currentBalanceOp = 'add';
+
+function viewUser(userId) {
+  const user = adminState.users.find(u => u.id === userId);
+  if (!user) return;
+
+  document.getElementById('userModalTitle').textContent = '👤 ' + (user.name || 'کاربر');
+  
+  document.getElementById('userModalBody').innerHTML = `
+    <div class="user-detail-row">
+      <span>آیدی:</span>
+      <span style="direction:ltr;">${user.user_id_public || '-'}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>نام:</span>
+      <span>${user.name || 'بدون نام'}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>موبایل:</span>
+      <span style="direction:ltr;">${user.phone || '-'}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>ایمیل:</span>
+      <span style="direction:ltr;">${user.email || '-'}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>شماره کارت:</span>
+      <span style="direction:ltr;">${user.card_number || '-'}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>موجودی:</span>
+      <span style="color:#F59E0B;">${toFa(Math.floor(user.balance || 0))} TAT</span>
+    </div>
+    <div class="user-detail-row">
+      <span>سطح پروفایل:</span>
+      <span>${user.profile_level || 'basic'}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>سطح کاربری:</span>
+      <span>${user.tier || 'bronze'}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>وضعیت:</span>
+      <span>
+        <span class="badge ${user.is_blocked ? 'badge-danger' : 'badge-success'}">
+          ${user.is_blocked ? 'مسدود' : 'فعال'}
+        </span>
+      </span>
+    </div>
+    <div class="user-detail-row">
+      <span>تاریخ عضویت:</span>
+      <span>${formatDate(user.created_at)}</span>
+    </div>
+    <div class="user-detail-row">
+      <span>آخرین ورود:</span>
+      <span>${formatTime(user.last_login)}</span>
+    </div>
+  `;
+
+  document.getElementById('userModal').classList.add('active');
+}
+
+function closeUserModal() {
+  document.getElementById('userModal').classList.remove('active');
+}
+
+// ویرایش موجودی
+function editBalance(userId) {
+  const user = adminState.users.find(u => u.id === userId);
+  if (!user) return;
+
+  currentUserId = userId;
+  currentBalanceOp = 'add';
+
+  document.getElementById('balanceUserName').textContent = user.name || 'کاربر';
+  document.getElementById('balanceUserCurrent').textContent = 
+    toFa(Math.floor(user.balance || 0)) + ' TAT';
+  document.getElementById('balanceAmount').value = '';
+  document.getElementById('balanceReason').value = '';
+
+  setBalanceOp('add');
+  document.getElementById('balanceModal').classList.add('active');
+}
+
+function closeBalanceModal() {
+  document.getElementById('balanceModal').classList.remove('active');
+  currentUserId = null;
+}
+
+function setBalanceOp(op) {
+  currentBalanceOp = op;
+  document.getElementById('btnAdd').classList.toggle('active', op === 'add');
+  document.getElementById('btnSub').classList.toggle('active', op === 'sub');
+}
+
+async function submitBalanceChange() {
+  const amount = parseFloat(document.getElementById('balanceAmount').value);
+  const reason = document.getElementById('balanceReason').value.trim();
+
+  if (!amount || amount <= 0) {
+    showToast('مقدار معتبر وارد کن', 'error');
+    return;
+  }
+
+  const finalAmount = currentBalanceOp === 'add' ? amount : -amount;
+
+  const btn = document.getElementById('balanceSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'در حال ذخیره...';
+
+  try {
+    const result = await apiUpdateUserBalance(currentUserId, finalAmount, reason);
+
+    // آپدیت local state
+    const user = adminState.users.find(u => u.id === currentUserId);
+    if (user) user.balance = result.newBalance;
+
+    showToast('موجودی با موفقیت تغییر کرد ✅', 'success');
+    closeBalanceModal();
+    renderUsers(adminState.users);
+    loadDashboard();
+
+  } catch (error) {
+    console.error('submitBalanceChange error:', error);
+    showToast(error.message || 'خطا در ذخیره', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ذخیره تغییرات';
+  }
+}
+
+// قفل/آزاد
+async function toggleBlock(userId, block) {
+  const action = block ? 'قفل' : 'آزاد';
+  if (!confirm(`مطمئنی می‌خوای کاربر رو ${action} کنی؟`)) return;
+
+  try {
+    await apiToggleUserBlock(userId, block);
+
+    const user = adminState.users.find(u => u.id === userId);
+    if (user) user.is_blocked = block;
+
+    showToast(`کاربر ${action} شد ✅`, 'success');
+    renderUsers(adminState.users);
+
+  } catch (error) {
+    console.error('toggleBlock error:', error);
+    showToast(error.message || 'خطا', 'error');
+  }
+}
+
+// بستن modal با کلیک بیرون
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'userModal') closeUserModal();
+  if (e.target.id === 'balanceModal') closeBalanceModal();
+});
