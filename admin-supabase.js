@@ -3,12 +3,12 @@
    ═══════════════════════════════════════════ */
 
 // ⚠️ این دو مقدار رو از پروژه TATmanager بگیر
-const ADMIN_SUPABASE_URL = 'https://YOUR-ADMIN-PROJECT.supabase.co';
-const ADMIN_SUPABASE_ANON_KEY = 'YOUR-ADMIN-ANON-KEY';
+const ADMIN_SUPABASE_URL = 'https://irqtkkkaignvsjccquzd.supabase.co';
+const ADMIN_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycXRra2thaWdudnNqY2NxdXpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MzIwMDksImV4cCI6MjEwNTQwODAwOX0.oYziZfngr3LmcV794eupK1CBwM6u44EKFRS0LYf_nRM';
 
 // ⚠️ این مقدار رو از پروژه کاربران (TAT اصلی) بگیر
 const USERS_SUPABASE_URL = 'https://lvujgergogwodfskkqrh.supabase.co';
-const USERS_SUPABASE_ANON_KEY = 'YOUR-USERS-ANON-KEY';
+const USERS_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2dWpnZXJnb2d3b2Rmc2trcXJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDYwNTEsImV4cCI6MjEwNTMyMjA1MX0.W1OPbhAaBbtJrfgir3Nez4iP8tBWShXv7wFYkYGNKrY';
 
 // کلاینت ادمین
 const adminSupabase = window.supabase.createClient(
