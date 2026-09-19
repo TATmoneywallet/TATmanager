@@ -128,3 +128,46 @@ async function apiUpdatePrice(symbol, newPrice, change) {
   if (error) throw error;
   return data;
 }
+
+// ═══════════════════════════════════════
+// Admin Actions (via Edge Function)
+// ═══════════════════════════════════════
+
+async function apiAdminAction(action, data) {
+  const { data: result, error } = await adminSupabase.functions.invoke('admin-actions', {
+    body: {
+      action,
+      token: adminState.token,
+      data
+    }
+  });
+
+  if (error) throw new Error(error.message || 'خطا در اجرا');
+  if (result.error) throw new Error(result.error);
+  return result;
+}
+
+// ویرایش موجودی
+async function apiUpdateUserBalance(userId, amount, reason) {
+  return await apiAdminAction('update_balance', { userId, amount, reason });
+}
+
+// قفل/آزاد
+async function apiToggleUserBlock(userId, block) {
+  return await apiAdminAction('toggle_block', { userId, block });
+}
+
+// حذف کاربر
+async function apiDeleteUser(userId) {
+  return await apiAdminAction('delete_user', { userId });
+}
+
+// Mint
+async function apiMint(userId, amount, reason) {
+  return await apiAdminAction('mint', { userId, amount, reason });
+}
+
+// Burn
+async function apiBurn(userId, amount, reason) {
+  return await apiAdminAction('burn', { userId, amount, reason });
+}

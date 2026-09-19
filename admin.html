@@ -160,31 +160,88 @@
       </div>
     </section>
 
-    <!-- ═══ صفحه کاربران ═══ -->
-    <section class="page" data-page="users">
-      <div class="page-header">
-        <h2>👥 کاربران</h2>
-        <div class="search-box">
-          <input type="text" id="userSearch" placeholder="جستجو..." oninput="filterUsers()">
+   <!-- ═══ صفحه کاربران ═══ -->
+<section class="page" data-page="users">
+  <div class="page-header">
+    <h2>👥 کاربران</h2>
+    <div class="search-box">
+      <input type="text" id="userSearch" placeholder="جستجو..." oninput="filterUsers()">
+    </div>
+  </div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>آیدی</th>
+          <th>نام</th>
+          <th>موبایل</th>
+          <th>موجودی</th>
+          <th>وضعیت</th>
+          <th>عملیات</th>
+        </tr>
+      </thead>
+      <tbody id="usersTableBody">
+        <tr><td colspan="6" class="loading">در حال بارگذاری...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══ Modal: جزئیات کاربر ═══ -->
+<div class="modal" id="userModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="userModalTitle">جزئیات کاربر</h3>
+      <button class="modal-close" onclick="closeUserModal()">✕</button>
+    </div>
+    <div class="modal-body" id="userModalBody">
+      <!-- محتوا اینجا -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal: ویرایش موجودی ═══ -->
+<div class="modal" id="balanceModal">
+  <div class="modal-content" style="max-width:450px;">
+    <div class="modal-header">
+      <h3>💰 ویرایش موجودی</h3>
+      <button class="modal-close" onclick="closeBalanceModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>کاربر</label>
+        <div id="balanceUserName" style="font-weight:600; padding:10px 0;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>موجودی فعلی</label>
+        <div id="balanceUserCurrent" style="color:#F59E0B; font-weight:700; font-size:18px;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>عملیات</label>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-action active" id="btnAdd" onclick="setBalanceOp('add')">➕ افزودن</button>
+          <button class="btn-action" id="btnSub" onclick="setBalanceOp('sub')">➖ کاهش</button>
         </div>
       </div>
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>آیدی</th>
-              <th>نام</th>
-              <th>موبایل</th>
-              <th>موجودی</th>
-              <th>وضعیت</th>
-            </tr>
-          </thead>
-          <tbody id="usersTableBody">
-            <tr><td colspan="5" class="loading">در حال بارگذاری...</td></tr>
-          </tbody>
-        </table>
+
+      <div class="form-group">
+        <label>مقدار</label>
+        <input type="number" id="balanceAmount" placeholder="مثلاً 100" min="1">
       </div>
-    </section>
+
+      <div class="form-group">
+        <label>دلیل (اختیاری)</label>
+        <input type="text" id="balanceReason" placeholder="مثلاً: هدیه">
+      </div>
+
+      <button class="btn-primary" onclick="submitBalanceChange()" id="balanceSubmitBtn">
+        ذخیره تغییرات
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- ═══ صفحه تراکنش‌ها ═══ -->
     <section class="page" data-page="transactions">
