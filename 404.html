@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAT Admin Panel — مدیریت</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ -->
+<!-- صفحه ورود ادمین -->
+<!-- ═══════════════════════════════════ -->
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-icon">🛡</div>
+      <h1>TAT Admin</h1>
+      <p>پنل مدیریت کیف پول</p>
+    </div>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>ایمیل</label>
+        <input type="email" id="loginEmail" placeholder="admin@tat.wallet" required>
+      </div>
+
+      <div class="form-group">
+        <label>رمز عبور</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" required>
+      </div>
+
+      <div class="login-error" id="loginError"></div>
+
+      <button type="submit" class="btn-login">
+        <span>ورود به پنل</span>
+        <span class="arrow">←</span>
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <p>نسخه ۱٫۰٫۰ — © ۲۰۲۵ TAT</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- پنل ادمین (بعد از لاگین) -->
+<!-- ═══════════════════════════════════ -->
+<div class="admin-layout" id="adminLayout" style="display:none;">
+
+  <!-- سایدبار -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🛡</div>
+        <span>TAT Admin</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-page="dashboard" onclick="goTo('dashboard')">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-text">داشبورد</span>
+      </a>
+      <a class="nav-item" data-page="users" onclick="goTo('users')">
+        <span class="nav-icon">👥</span>
+        <span class="nav-text">کاربران</span>
+      </a>
+      <a class="nav-item" data-page="transactions" onclick="goTo('transactions')">
+        <span class="nav-icon">💸</span>
+        <span class="nav-text">تراکنش‌ها</span>
+      </a>
+      <a class="nav-item" data-page="invite-codes" onclick="goTo('invite-codes')">
+        <span class="nav-icon">🎟️</span>
+        <span class="nav-text">کدهای دعوت</span>
+      </a>
+      <a class="nav-item" data-page="prices" onclick="goTo('prices')">
+        <span class="nav-icon">💱</span>
+        <span class="nav-text">قیمت‌ها</span>
+      </a>
+      <a class="nav-item" data-page="reports" onclick="goTo('reports')">
+        <span class="nav-icon">📊</span>
+        <span class="nav-text">گزارش‌ها</span>
+      </a>
+      <a class="nav-item" data-page="settings" onclick="goTo('settings')">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-text">تنظیمات</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <div class="admin-avatar" id="adminAvatar">م</div>
+        <div class="admin-details">
+          <div class="admin-name" id="adminName">مدیر</div>
+          <div class="admin-role" id="adminRole">مدیر ارشد</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()" title="خروج">
+        🚪
+      </button>
+    </div>
+  </aside>
+
+  <!-- محتوا -->
+  <main class="main-content">
+    <!-- هدر -->
+    <header class="top-header">
+      <div class="header-title" id="pageTitle">داشبورد</div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="refreshData()" title="بروزرسانی">🔄</button>
+        <button class="icon-btn" onclick="toggleTheme()" title="تغییر تم">🌙</button>
+      </div>
+    </header>
+
+    <!-- ═══ صفحه داشبورد ═══ -->
+    <section class="page active" data-page="dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(59,130,246,0.15); color:#3B82F6;">👥</div>
+          <div class="stat-info">
+            <div class="stat-label">کاربران</div>
+            <div class="stat-value" id="statUsers">۰</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10B981;">💸</div>
+          <div class="stat-info">
+            <div class="stat-label">تراکنش‌ها</div>
+            <div class="stat-value" id="statTransactions">۰</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:#F59E0B;">🪙</div>
+          <div class="stat-info">
+            <div class="stat-label">مجموع TAT</div>
+            <div class="stat-value" id="statBalance">۰</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(139,92,246,0.15); color:#8B5CF6;">🎟️</div>
+          <div class="stat-info">
+            <div class="stat-label">کدهای دعوت</div>
+            <div class="stat-value" id="statInvites">۰</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>📊 آخرین فعالیت‌ها</h3>
+        <div id="recentActivity" class="activity-list">
+          <div class="loading">در حال بارگذاری...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ صفحه کاربران ═══ -->
+    <section class="page" data-page="users">
+      <div class="page-header">
+        <h2>👥 کاربران</h2>
+        <div class="search-box">
+          <input type="text" id="userSearch" placeholder="جستجو..." oninput="filterUsers()">
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>آیدی</th>
+              <th>نام</th>
+              <th>موبایل</th>
+              <th>موجودی</th>
+              <th>وضعیت</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="5" class="loading">در حال بارگذاری...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ صفحه تراکنش‌ها ═══ -->
+    <section class="page" data-page="transactions">
+      <div class="page-header">
+        <h2>💸 تراکنش‌ها</h2>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>کد پیگیری</th>
+              <th>نوع</th>
+              <th>مقدار</th>
+              <th>وضعیت</th>
+              <th>تاریخ</th>
+            </tr>
+          </thead>
+          <tbody id="txTableBody">
+            <tr><td colspan="5" class="loading">در حال بارگذاری...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ صفحه کدهای دعوت ═══ -->
+    <section class="page" data-page="invite-codes">
+      <div class="page-header">
+        <h2>🎟️ کدهای دعوت</h2>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>کد</th>
+              <th>وضعیت</th>
+              <th>جایزه</th>
+              <th>تاریخ انقضا</th>
+            </tr>
+          </thead>
+          <tbody id="invitesTableBody">
+            <tr><td colspan="4" class="loading">در حال بارگذاری...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ صفحه قیمت‌ها ═══ -->
+    <section class="page" data-page="prices">
+      <div class="page-header">
+        <h2>💱 مدیریت قیمت‌ها</h2>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>نماد</th>
+              <th>نام</th>
+              <th>قیمت</th>
+              <th>تغییر</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody id="pricesTableBody">
+            <tr><td colspan="5" class="loading">در حال بارگذاری...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ صفحه گزارش‌ها ═══ -->
+    <section class="page" data-page="reports">
+      <div class="page-header">
+        <h2>📊 گزارش‌ها</h2>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(59,130,246,0.15); color:#3B82F6;">📥</div>
+          <div class="stat-info">
+            <div class="stat-label">واریز امروز</div>
+            <div class="stat-value" id="reportIn">۰</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(239,68,68,0.15); color:#EF4444;">📤</div>
+          <div class="stat-info">
+            <div class="stat-label">برداشت امروز</div>
+            <div class="stat-value" id="reportOut">۰</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ صفحه تنظیمات ═══ -->
+    <section class="page" data-page="settings">
+      <div class="page-header">
+        <h2>⚙️ تنظیمات</h2>
+      </div>
+      <div class="settings-card">
+        <h3>اطلاعات ادمین</h3>
+        <div class="settings-row">
+          <span>ایمیل:</span>
+          <span id="settingsEmail">-</span>
+        </div>
+        <div class="settings-row">
+          <span>نام:</span>
+          <span id="settingsName">-</span>
+        </div>
+        <div class="settings-row">
+          <span>نقش:</span>
+          <span id="settingsRole">-</span>
+        </div>
+        <button class="btn-danger" onclick="handleLogout()">🚪 خروج از پنل</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div class="toast" id="toast"></div>
+
+<script src="admin-supabase.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
