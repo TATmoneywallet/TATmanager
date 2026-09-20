@@ -20,16 +20,21 @@ document.addEventListener('DOMContentLoaded', () => {
   checkExistingSession();
 });
 
-function checkExistingSession() {
+async function checkExistingSession() {
   const saved = localStorage.getItem('tat_admin_session');
   if (saved) {
     try {
       const session = JSON.parse(saved);
       if (session.expiresAt && new Date(session.expiresAt) > new Date()) {
-        adminState.token = session.token;
-        adminState.admin = session.admin;
-        showAdminPanel();
-        return;
+        // چک کن session هنوز معتبره
+        const { data: { session: supaSession } } = await supabaseClient.auth.getSession();
+        
+        if (supaSession && supaSession.access_token === session.token) {
+          adminState.token = session.token;
+          adminState.admin = session.admin;
+          showAdminPanel();
+          return;
+        }
       }
     } catch (e) {
       console.error('Session error:', e);
@@ -37,7 +42,6 @@ function checkExistingSession() {
   }
   showLoginPage();
 }
-
 function showLoginPage() {
   document.getElementById('loginPage').style.display = 'flex';
   document.getElementById('adminLayout').style.display = 'none';
@@ -80,7 +84,6 @@ async function handleLogin(e) {
   try {
     const result = await apiAdminLogin(email, password);
 
-    // ذخیره session
     adminState.token = result.token;
     adminState.admin = result.admin;
 
@@ -100,14 +103,6 @@ async function handleLogin(e) {
   }
 }
 
-function handleLogout() {
-  if (!confirm('مطمئنی می‌خوای خارج بشی؟')) return;
-  
-  localStorage.removeItem('tat_admin_session');
-  adminState.token = null;
-  adminState.admin = null;
-  location.reload();
-}
 
 // ═══════════════════════════════════════
 // NAVIGATION
