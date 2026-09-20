@@ -8,7 +8,8 @@ const adminState = {
   users: [],
   transactions: [],
   inviteCodes: [],
-  prices: []
+  prices: [],
+  adminLogs: []
 };
 
 // ═══════════════════════════════════════
@@ -143,6 +144,7 @@ function goTo(pageName) {
   else if (pageName === 'mint-burn') loadMintBurn();
   else if (pageName === 'settings') loadSettings();
   else if (pageName === 'reports') loadReports();
+  else if (pageName === 'admin-logs') loadAdminLogs();
 }
 
 // ═══════════════════════════════════════
@@ -996,6 +998,125 @@ function exportReport() {
     
   } catch (error) {
     console.error('exportReport error:', error);
+    showToast('خطا در خروجی', 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// ADMIN LOGS
+// ═══════════════════════════════════════
+
+async function loadAdminLogs() {
+  try {
+    const filter = document.getElementById('logActionFilter')?.value || '';
+    
+    let query = adminProjectClient
+      .from('admin_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    
+    if (filter) {
+      query = query.eq('action', filter);
+    }
+    
+    const { data: logs, error } = await query;
+    
+    if (error) throw error;
+    
+    renderAdminLogs(logs || []);
+    adminState.adminLogs = logs || [];
+    
+  } catch (error) {
+    console.error('loadAdminLogs error:', error);
+    showToast('خطا در بارگذاری لاگ‌ها', 'error');
+  }
+}
+
+function renderAdminLogs(logs) {
+  const tbody = document.getElementById('adminLogsTableBody');
+  
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="loading">لاگی وجود ندارد</td></tr>';
+    return;
+  }
+  
+  const actionNames = {
+    'login_success': 'ورود موفق',
+    'login_failed': 'ورود ناموفق',
+    'update_balance': 'تغییر موجودی',
+    'mint': 'چاپ TAT',
+    'burn': 'سوزاندن TAT',
+    'block_user': 'قفل کاربر',
+    'unblock_user': 'آزاد کردن کاربر',
+    'delete_user': 'حذف کاربر',
+    'logout': 'خروج'
+  };
+  
+  tbody.innerHTML = logs.map(log => {
+    const actionClass = log.action || 'default';
+    const actionName = actionNames[log.action] || log.action;
+    
+    let details = '';
+    if (log.details) {
+      try {
+        const d = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
+        if (d.amount) details = `مقدار: ${toFa(d.amount)} TAT`;
+        if (d.reason) details += ` | دلیل: ${d.reason}`;
+      } catch (e) {}
+    }
+    
+    return `
+      <tr>
+        <td style="font-size:12px;">${formatTime(log.created_at)}</td>
+        <td style="direction:ltr; font-size:12px;">${log.admin_email || '-'}</td>
+        <td>
+          <span class="log-action-badge ${actionClass}">
+            ${actionName}
+          </span>
+        </td>
+        <td style="direction:ltr; font-size:11px;">${log.target_id ? log.target_id.substring(0, 8) + '...' : '-'}</td>
+        <td style="font-size:12px;">${details || '-'}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function exportLogs() {
+  try {
+    const logs = adminState.adminLogs || [];
+    
+    if (!logs.length) {
+      showToast('لاگی برای خروجی وجود ندارد', 'error');
+      return;
+    }
+    
+    const headers = ['زمان', 'ادمین', 'اکشن', 'هدف', 'جزئیات'];
+    const rows = logs.map(log => [
+      new Date(log.created_at).toLocaleString('fa-IR'),
+      log.admin_email || '',
+      log.action || '',
+      log.target_id || '',
+      JSON.stringify(log.details || {})
+    ]);
+    
+    const csv = [
+      headers.join(','),
+      ...rows.map(r => r.map(c => `"${c}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TAT-AdminLogs-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('لاگ‌ها دانلود شد 📥', 'success');
+    
+  } catch (error) {
+    console.error('exportLogs error:', error);
     showToast('خطا در خروجی', 'error');
   }
 }
