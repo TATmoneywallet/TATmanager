@@ -105,6 +105,10 @@
         <span class="nav-icon">💱</span>
         <span class="nav-text">قیمت‌ها</span>
       </a>
+     <a class="nav-item" data-page="mint-burn" onclick="goTo('mint-burn')">
+  <span class="nav-icon">🪙</span>
+  <span class="nav-text">Mint/Burn</span>
+</a>
       <a class="nav-item" data-page="reports" onclick="goTo('reports')">
         <span class="nav-icon">📊</span>
         <span class="nav-text">گزارش‌ها</span>
@@ -335,6 +339,78 @@
       </div>
     </section>
 
+   <!-- ═══ صفحه Mint/Burn ═══ -->
+<section class="page" data-page="mint-burn">
+  <div class="page-header">
+    <h2>🪙 Mint / Burn</h2>
+  </div>
+
+  <div class="stats-grid" style="grid-template-columns: 1fr 1fr; max-width: 800px;">
+    <!-- Mint -->
+    <div class="chart-card">
+      <h3 style="color:#10B981;">🪙 Mint — چاپ TAT</h3>
+      <p style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">
+        اضافه کردن TAT جدید به موجودی کاربر
+      </p>
+      
+      <div class="form-group">
+        <label>کاربر</label>
+        <input type="text" id="mintUserSearch" placeholder="آیدی یا شماره موبایل..." list="usersListMint">
+        <datalist id="usersListMint"></datalist>
+      </div>
+
+      <div class="form-group">
+        <label>مقدار TAT</label>
+        <input type="number" id="mintAmount" placeholder="مثلاً 1000" min="1">
+      </div>
+
+      <div class="form-group">
+        <label>دلیل (اختیاری)</label>
+        <input type="text" id="mintReason" placeholder="مثلاً: هدیه">
+      </div>
+
+      <button class="btn-primary" onclick="doMint()" style="background:linear-gradient(135deg,#10B981,#059669);">
+        🪙 چاپ TAT
+      </button>
+    </div>
+
+    <!-- Burn -->
+    <div class="chart-card">
+      <h3 style="color:#EF4444;">🔥 Burn — سوزاندن TAT</h3>
+      <p style="color:var(--text-dim); font-size:13px; margin-bottom:16px;">
+        کم کردن TAT از موجودی کاربر
+      </p>
+      
+      <div class="form-group">
+        <label>کاربر</label>
+        <input type="text" id="burnUserSearch" placeholder="آیدی یا شماره موبایل..." list="usersListBurn">
+        <datalist id="usersListBurn"></datalist>
+      </div>
+
+      <div class="form-group">
+        <label>مقدار TAT</label>
+        <input type="number" id="burnAmount" placeholder="مثلاً 100" min="1">
+      </div>
+
+      <div class="form-group">
+        <label>دلیل (اختیاری)</label>
+        <input type="text" id="burnReason" placeholder="مثلاً: مالیات">
+      </div>
+
+      <button class="btn-primary" onclick="doBurn()" style="background:linear-gradient(135deg,#EF4444,#DC2626);">
+        🔥 سوزاندن TAT
+      </button>
+    </div>
+  </div>
+
+  <!-- تاریخچه -->
+  <div class="chart-card" style="margin-top:24px;">
+    <h3>📊 تاریخچه Mint/Burn</h3>
+    <div id="mintBurnHistory" class="activity-list">
+      <div class="loading">در حال بارگذاری...</div>
+    </div>
+  </div>
+</section>
     <!-- ═══ صفحه گزارش‌ها ═══ -->
     <section class="page" data-page="reports">
       <div class="page-header">
