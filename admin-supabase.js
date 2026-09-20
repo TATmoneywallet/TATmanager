@@ -240,3 +240,12 @@ async function apiUpdateSetting(key, value) {
   if (error) throw error;
   return data;
 }
+
+// پروژه ادمین (TATmanager)
+const ADMIN_PROJECT_URL = 'https://irqtkkkaignvsjccquzd.supabase.co';
+const ADMIN_PROJECT_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlycXRra2thaWdudnNqY2NxdXpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4MzIwMDksImV4cCI6MjEwNTQwODAwOX0.oYziZfngr3LmcV794eupK1CBwM6u44EKFRS0LYf_nRM';
+
+const adminProjectClient = window.supabase.createClient(
+  ADMIN_PROJECT_URL,
+  ADMIN_PROJECT_ANON
+);
