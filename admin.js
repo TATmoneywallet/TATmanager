@@ -142,6 +142,7 @@ function goTo(pageName) {
   else if (pageName === 'prices') loadPrices();
   else if (pageName === 'mint-burn') loadMintBurn();
   else if (pageName === 'settings') loadSettings();
+  else if (pageName === 'reports') loadReports();
 }
 
 // ═══════════════════════════════════════
