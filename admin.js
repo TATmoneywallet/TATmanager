@@ -118,23 +118,24 @@ function goTo(pageName) {
   if (nav) nav.classList.add('active');
 
   // آپدیت عنوان
-  const titles = {
-    'dashboard': 'داشبورد',
-    'users': 'کاربران',
-    'transactions': 'تراکنش‌ها',
-    'invite-codes': 'کدهای دعوت',
-    'prices': 'قیمت‌ها',
-    'reports': 'گزارش‌ها',
-    'settings': 'تنظیمات'
-  };
+ const titles = {
+  'dashboard': 'داشبورد',
+  'users': 'کاربران',
+  'transactions': 'تراکنش‌ها',
+  'invite-codes': 'کدهای دعوت',
+  'prices': 'قیمت‌ها',
+  'mint-burn': 'Mint / Burn',
+  'reports': 'گزارش‌ها',
+  'settings': 'تنظیمات'
+};
   document.getElementById('pageTitle').textContent = titles[pageName] || 'داشبورد';
 
   // بارگذاری داده‌های صفحه
   if (pageName === 'users') loadUsers();
-  else if (pageName === 'transactions') loadTransactions();
-  else if (pageName === 'invite-codes') loadInviteCodes();
-  else if (pageName === 'prices') loadPrices();
-}
+else if (pageName === 'transactions') loadTransactions();
+else if (pageName === 'invite-codes') loadInviteCodes();
+else if (pageName === 'prices') loadPrices();
+else if (pageName === 'mint-burn') loadMintBurn();
 
 // ═══════════════════════════════════════
 // LOAD DATA
@@ -574,3 +575,166 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'userModal') closeUserModal();
   if (e.target.id === 'balanceModal') closeBalanceModal();
 });
+
+// ═══════════════════════════════════════
+// MINT / BURN
+// ═══════════════════════════════════════
+
+function loadMintBurn() {
+  // پر کردن datalist کاربران
+  const datalistMint = document.getElementById('usersListMint');
+  const datalistBurn = document.getElementById('usersListBurn');
+  
+  if (datalistMint && adminState.users.length) {
+    datalistMint.innerHTML = adminState.users.map(u => 
+      `<option value="${u.user_id_public}">${u.name || 'بدون نام'} - ${u.phone || 'بدون موبایل'}</option>`
+    ).join('');
+  }
+  
+  if (datalistBurn && adminState.users.length) {
+    datalistBurn.innerHTML = adminState.users.map(u => 
+      `<option value="${u.user_id_public}">${u.name || 'بدون نام'} - ${u.phone || 'بدون موبایل'}</option>`
+    ).join('');
+  }
+
+  loadMintBurnHistory();
+}
+
+function findUserByInput(input) {
+  const q = input.toLowerCase().trim();
+  return adminState.users.find(u => 
+    u.user_id_public?.toLowerCase() === q ||
+    u.phone === q ||
+    u.email?.toLowerCase() === q
+  );
+}
+
+async function doMint() {
+  const userInput = document.getElementById('mintUserSearch').value.trim();
+  const amount = parseFloat(document.getElementById('mintAmount').value);
+  const reason = document.getElementById('mintReason').value.trim();
+
+  if (!userInput) {
+    showToast('کاربر رو انتخاب کن', 'error');
+    return;
+  }
+  if (!amount || amount <= 0) {
+    showToast('مقدار معتبر وارد کن', 'error');
+    return;
+  }
+
+  const user = findUserByInput(userInput);
+  if (!user) {
+    showToast('کاربر پیدا نشد', 'error');
+    return;
+  }
+
+  if (!confirm(`مطمئنی ${toFa(amount)} TAT برای ${user.name} چاپ کنی؟`)) return;
+
+  try {
+    await apiUpdateUserBalance(user.id, amount, reason || 'چاپ توسط ادمین');
+    
+    // آپدیت local
+    user.balance = parseFloat(user.balance) + amount;
+    
+    showToast(`✅ ${toFa(amount)} TAT برای ${user.name} چاپ شد`, 'success');
+    
+    // پاک کردن فرم
+    document.getElementById('mintUserSearch').value = '';
+    document.getElementById('mintAmount').value = '';
+    document.getElementById('mintReason').value = '';
+    
+    loadMintBurnHistory();
+    loadDashboard();
+
+  } catch (error) {
+    console.error('doMint error:', error);
+    showToast(error.message || 'خطا', 'error');
+  }
+}
+
+async function doBurn() {
+  const userInput = document.getElementById('burnUserSearch').value.trim();
+  const amount = parseFloat(document.getElementById('burnAmount').value);
+  const reason = document.getElementById('burnReason').value.trim();
+
+  if (!userInput) {
+    showToast('کاربر رو انتخاب کن', 'error');
+    return;
+  }
+  if (!amount || amount <= 0) {
+    showToast('مقدار معتبر وارد کن', 'error');
+    return;
+  }
+
+  const user = findUserByInput(userInput);
+  if (!user) {
+    showToast('کاربر پیدا نشد', 'error');
+    return;
+  }
+
+  if (parseFloat(user.balance) < amount) {
+    showToast(`موجودی ${user.name} کافی نیست (${toFa(Math.floor(user.balance))} TAT)`, 'error');
+    return;
+  }
+
+  if (!confirm(`مطمئنی ${toFa(amount)} TAT از ${user.name} بسوزونی؟`)) return;
+
+  try {
+    await apiUpdateUserBalance(user.id, -amount, reason || 'سوزاندن توسط ادمین');
+    
+    // آپدیت local
+    user.balance = parseFloat(user.balance) - amount;
+    
+    showToast(`🔥 ${toFa(amount)} TAT از ${user.name} سوزونده شد`, 'success');
+    
+    // پاک کردن فرم
+    document.getElementById('burnUserSearch').value = '';
+    document.getElementById('burnAmount').value = '';
+    document.getElementById('burnReason').value = '';
+    
+    loadMintBurnHistory();
+    loadDashboard();
+
+  } catch (error) {
+    console.error('doBurn error:', error);
+    showToast(error.message || 'خطا', 'error');
+  }
+}
+
+async function loadMintBurnHistory() {
+  try {
+    const txs = await apiGetTransactions(50);
+    const mintBurn = txs.filter(tx => 
+      tx.type === 'admin_credit' || 
+      tx.type === 'admin_debit' || 
+      tx.type === 'mint' || 
+      tx.type === 'burn'
+    ).slice(0, 20);
+
+    const container = document.getElementById('mintBurnHistory');
+    
+    if (!mintBurn.length) {
+      container.innerHTML = '<div class="loading">تاریخچه‌ای وجود ندارد</div>';
+      return;
+    }
+
+    container.innerHTML = mintBurn.map(tx => {
+      const isCredit = tx.type === 'admin_credit' || tx.type === 'mint';
+      return `
+        <div class="activity-item">
+          <div class="activity-icon" style="background:${isCredit ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};">
+            ${isCredit ? '🪙' : '🔥'}
+          </div>
+          <div class="activity-content">
+            <div class="activity-title">${tx.description || 'عملیات ادمین'}</div>
+            <div class="activity-time">${toFa(tx.amount)} TAT — ${formatTime(tx.created_at)}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error('loadMintBurnHistory error:', error);
+  }
+}
