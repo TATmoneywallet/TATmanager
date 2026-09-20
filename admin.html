@@ -113,6 +113,10 @@
         <span class="nav-icon">📊</span>
         <span class="nav-text">گزارش‌ها</span>
       </a>
+     <a class="nav-item" data-page="admin-logs" onclick="goTo('admin-logs')">
+  <span class="nav-icon">📜</span>
+  <span class="nav-text">لاگ ادمین</span>
+</a>
       <a class="nav-item" data-page="settings" onclick="goTo('settings')">
         <span class="nav-icon">⚙️</span>
         <span class="nav-text">تنظیمات</span>
@@ -423,6 +427,50 @@
     </div>
   </div>
 
+ <!-- ═══ صفحه لاگ ادمین ═══ -->
+<section class="page" data-page="admin-logs">
+  <div class="page-header">
+    <h2>📜 لاگ ادمین</h2>
+    <button class="btn-export" onclick="exportLogs()">
+      📥 خروجی Excel
+    </button>
+  </div>
+
+  <!-- فیلترها -->
+  <div class="filter-row">
+    <select id="logActionFilter" onchange="loadAdminLogs()" 
+            style="padding:10px 16px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:inherit; font-size:13px;">
+      <option value="">همه اکشن‌ها</option>
+      <option value="login_success">ورود موفق</option>
+      <option value="login_failed">ورود ناموفق</option>
+      <option value="update_balance">تغییر موجودی</option>
+      <option value="mint">چاپ TAT</option>
+      <option value="burn">سوزاندن TAT</option>
+      <option value="block_user">قفل کاربر</option>
+      <option value="unblock_user">آزاد کردن کاربر</option>
+      <option value="delete_user">حذف کاربر</option>
+    </select>
+  </div>
+
+  <!-- جدول لاگ -->
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>زمان</th>
+          <th>ادمین</th>
+          <th>اکشن</th>
+          <th>هدف</th>
+          <th>جزئیات</th>
+        </tr>
+      </thead>
+      <tbody id="adminLogsTableBody">
+        <tr><td colspan="5" class="loading">در حال بارگذاری...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+ 
   <!-- کارت‌های آماری -->
   <div class="stats-grid">
     <div class="stat-card">
