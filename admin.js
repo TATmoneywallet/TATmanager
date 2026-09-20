@@ -142,6 +142,7 @@ function goTo(pageName) {
   else if (pageName === 'prices') loadPrices();
   else if (pageName === 'mint-burn') loadMintBurn();
   else if (pageName === 'settings') loadSettings();
+  else if (pageName === 'reports') loadReports();
 }
 
 // ═══════════════════════════════════════
@@ -818,5 +819,183 @@ async function saveLimits() {
   } catch (error) {
     console.error('saveLimits error:', error);
     showToast(error.message || 'خطا', 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════
+
+let currentReportRange = 'today';
+
+function setReportRange(range, btn) {
+  document.querySelectorAll('.report-tab-inline').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentReportRange = range;
+  loadReports();
+}
+
+async function loadReports() {
+  try {
+    const txs = await apiGetTransactions(500);
+    
+    // فیلتر بر اساس بازه
+    const filtered = filterByRange(txs, currentReportRange);
+    
+    // محاسبات
+    let totalIn = 0;
+    let totalOut = 0;
+    let totalFee = 0;
+    
+    filtered.forEach(tx => {
+      const amount = parseFloat(tx.amount) || 0;
+      const fee = parseFloat(tx.fee) || 0;
+      
+      if (tx.type === 'transfer') {
+        if (tx.from_user) totalOut += amount;
+        if (tx.to_user) totalIn += amount;
+      } else if (tx.type === 'admin_credit' || tx.type === 'invite_reward' || tx.type === 'invite_reward_owner' || tx.type === 'mint') {
+        totalIn += amount;
+      } else if (tx.type === 'admin_debit' || tx.type === 'burn') {
+        totalOut += amount;
+      }
+      
+      totalFee += fee;
+    });
+    
+    // آپدیت UI
+    document.getElementById('reportIn').textContent = toFa(Math.floor(totalIn)) + ' TAT';
+    document.getElementById('reportOut').textContent = toFa(Math.floor(totalOut)) + ' TAT';
+    document.getElementById('reportCount').textContent = toFa(filtered.length);
+    document.getElementById('reportFee').textContent = toFa(Math.floor(totalFee)) + ' TAT';
+    
+    // نمودار
+    renderTxChart(filtered);
+    
+    // جدول
+    renderReportTable(filtered.slice(0, 50));
+    
+  } catch (error) {
+    console.error('loadReports error:', error);
+    showToast('خطا در بارگذاری گزارش‌ها', 'error');
+  }
+}
+
+function filterByRange(txs, range) {
+  if (range === 'all') return txs;
+  
+  const now = new Date();
+  let fromDate;
+  
+  if (range === 'today') {
+    fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (range === 'week') {
+    fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  } else if (range === 'month') {
+    fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  }
+  
+  return txs.filter(tx => new Date(tx.created_at) >= fromDate);
+}
+
+function renderTxChart(txs) {
+  const container = document.getElementById('txChart');
+  
+  if (!txs.length) {
+    container.innerHTML = '<div class="loading">تراکنشی وجود ندارد</div>';
+    return;
+  }
+  
+  // گروه‌بندی بر اساس روز (۷ روز اخیر)
+  const days = [];
+  const now = new Date();
+  
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const dayLabel = d.toLocaleDateString('fa-IR', { weekday: 'short' });
+    const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    
+    const count = txs.filter(tx => {
+      const txDate = new Date(tx.created_at);
+      return txDate >= dayStart && txDate < dayEnd;
+    }).length;
+    
+    days.push({ label: dayLabel, count });
+  }
+  
+  const maxCount = Math.max(...days.map(d => d.count), 1);
+  
+  container.innerHTML = days.map(d => {
+    const height = (d.count / maxCount) * 100;
+    return `
+      <div class="bar-item">
+        <div class="bar-fill" style="height:${height}%;" data-value="${toFa(d.count)}"></div>
+        <div class="bar-label">${d.label}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderReportTable(txs) {
+  const tbody = document.getElementById('reportTableBody');
+  
+  if (!txs.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="loading">تراکنشی وجود ندارد</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = txs.map(tx => `
+    <tr>
+      <td style="direction:ltr; font-size:12px;">${tx.tx_code || tx.id.substring(0,8)}</td>
+      <td>${getTxTypeName(tx.type)}</td>
+      <td style="color:${tx.amount > 0 ? '#10B981' : '#EF4444'}; font-weight:700;">
+        ${toFa(tx.amount)} TAT
+      </td>
+      <td style="color:#F59E0B;">${toFa(tx.fee || 0)} TAT</td>
+      <td>${formatTime(tx.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+function exportReport() {
+  try {
+    const txs = adminState.transactions;
+    
+    if (!txs.length) {
+      showToast('تراکنشی برای خروجی وجود ندارد', 'error');
+      return;
+    }
+    
+    // ساخت CSV
+    const headers = ['کد پیگیری', 'نوع', 'مقدار', 'کارمزد', 'توضیحات', 'تاریخ'];
+    const rows = txs.map(tx => [
+      tx.tx_code || tx.id.substring(0,8),
+      getTxTypeName(tx.type),
+      tx.amount,
+      tx.fee || 0,
+      tx.description || '',
+      new Date(tx.created_at).toLocaleString('fa-IR')
+    ]);
+    
+    const csv = [
+      headers.join(','),
+      ...rows.map(r => r.map(c => `"${c}"`).join(','))
+    ].join('\n');
+    
+    // دانلود
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `TAT-Report-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('گزارش دانلود شد 📥', 'success');
+    
+  } catch (error) {
+    console.error('exportReport error:', error);
+    showToast('خطا در خروجی', 'error');
   }
 }
