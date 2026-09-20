@@ -14,12 +14,36 @@
 <!-- صفحه ورود ادمین -->
 <!-- ═══════════════════════════════════ -->
 <div class="login-page" id="loginPage">
-  <div class="login-card">
-    <div class="login-logo">
-      <div class="login-icon">🛡</div>
-      <h1>TAT Admin</h1>
-      <p>پنل مدیریت کیف پول</p>
+ <div class="login-card">
+  <div class="login-logo">
+    <div class="login-icon">🛡</div>
+    <h1>TAT Admin</h1>
+    <p>پنل مدیریت کیف پول</p>
+  </div>
+
+  <form id="loginForm" onsubmit="handleLogin(event)">
+    <div class="form-group">
+      <label>ایمیل</label>
+      <input type="email" id="loginEmail" placeholder="admin@tat.wallet" required>
     </div>
+
+    <div class="form-group">
+      <label>رمز عبور</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" required>
+    </div>
+
+    <div class="login-error" id="loginError"></div>
+
+    <button type="submit" class="btn-login">
+      <span>ورود به پنل</span>
+      <span class="arrow">←</span>
+    </button>
+  </form>
+
+  <div class="login-footer">
+    <p>نسخه ۲٫۰٫۰ — © ۲۰۲۵ TAT</p>
+  </div>
+</div>
 
     <form id="loginForm" onsubmit="handleLogin(event)">
       <div class="form-group">
