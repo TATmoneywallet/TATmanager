@@ -1,8 +1,7 @@
 /* ═══════════════════════════════════════════
-   TAT Admin Panel — Main Logic
+   TAT Admin Panel — Main Logic (v2.1.0)
    ═══════════════════════════════════════════ */
 
-// State
 const adminState = {
   token: null,
   admin: null,
@@ -26,15 +25,10 @@ async function checkExistingSession() {
     try {
       const session = JSON.parse(saved);
       if (session.expiresAt && new Date(session.expiresAt) > new Date()) {
-        // چک کن session هنوز معتبره
-        const { data: { session: supaSession } } = await supabaseClient.auth.getSession();
-        
-        if (supaSession && supaSession.access_token === session.token) {
-          adminState.token = session.token;
-          adminState.admin = session.admin;
-          showAdminPanel();
-          return;
-        }
+        adminState.token = session.token;
+        adminState.admin = session.admin;
+        showAdminPanel();
+        return;
       }
     } catch (e) {
       console.error('Session error:', e);
@@ -42,6 +36,7 @@ async function checkExistingSession() {
   }
   showLoginPage();
 }
+
 function showLoginPage() {
   document.getElementById('loginPage').style.display = 'flex';
   document.getElementById('adminLayout').style.display = 'none';
@@ -51,7 +46,6 @@ function showAdminPanel() {
   document.getElementById('loginPage').style.display = 'none';
   document.getElementById('adminLayout').style.display = 'flex';
 
-  // نمایش اطلاعات ادمین
   if (adminState.admin) {
     document.getElementById('adminName').textContent = adminState.admin.name || 'ادمین';
     document.getElementById('adminRole').textContent = 
@@ -64,8 +58,7 @@ function showAdminPanel() {
     document.getElementById('settingsRole').textContent = adminState.admin.role;
   }
 
-  // بارگذاری داده‌ها
-  loadDashboard();
+  loadUsers().then(() => loadDashboard());
 }
 
 // ═══════════════════════════════════════
@@ -103,6 +96,20 @@ async function handleLogin(e) {
   }
 }
 
+async function handleLogout() {
+  if (!confirm('مطمئنی می‌خوای خارج بشی؟')) return;
+  
+  try {
+    await apiAdminLogout();
+  } catch (e) {
+    console.error(e);
+  }
+  
+  localStorage.removeItem('tat_admin_session');
+  adminState.token = null;
+  adminState.admin = null;
+  location.reload();
+}
 
 // ═══════════════════════════════════════
 // NAVIGATION
@@ -117,25 +124,24 @@ function goTo(pageName) {
   const nav = document.querySelector(`.nav-item[data-page="${pageName}"]`);
   if (nav) nav.classList.add('active');
 
-  // آپدیت عنوان
- const titles = {
-  'dashboard': 'داشبورد',
-  'users': 'کاربران',
-  'transactions': 'تراکنش‌ها',
-  'invite-codes': 'کدهای دعوت',
-  'prices': 'قیمت‌ها',
-  'mint-burn': 'Mint / Burn',
-  'reports': 'گزارش‌ها',
-  'settings': 'تنظیمات'
-};
+  const titles = {
+    'dashboard': 'داشبورد',
+    'users': 'کاربران',
+    'transactions': 'تراکنش‌ها',
+    'invite-codes': 'کدهای دعوت',
+    'prices': 'قیمت‌ها',
+    'mint-burn': 'Mint / Burn',
+    'reports': 'گزارش‌ها',
+    'settings': 'تنظیمات'
+  };
   document.getElementById('pageTitle').textContent = titles[pageName] || 'داشبورد';
 
-  // بارگذاری داده‌های صفحه
   if (pageName === 'users') loadUsers();
-else if (pageName === 'transactions') loadTransactions();
-else if (pageName === 'invite-codes') loadInviteCodes();
-else if (pageName === 'prices') loadPrices();
-else if (pageName === 'mint-burn') loadMintBurn();
+  else if (pageName === 'transactions') loadTransactions();
+  else if (pageName === 'invite-codes') loadInviteCodes();
+  else if (pageName === 'prices') loadPrices();
+  else if (pageName === 'mint-burn') loadMintBurn();
+}
 
 // ═══════════════════════════════════════
 // LOAD DATA
@@ -150,7 +156,6 @@ async function loadDashboard() {
     document.getElementById('statBalance').textContent = toFa(Math.floor(stats.balance));
     document.getElementById('statInvites').textContent = toFa(stats.invites);
 
-    // آخرین تراکنش‌ها
     const txs = await apiGetTransactions(5);
     const container = document.getElementById('recentActivity');
     
@@ -171,7 +176,6 @@ async function loadDashboard() {
 
   } catch (error) {
     console.error('loadDashboard error:', error);
-    showToast('خطا در بارگذاری داشبورد', 'error');
   }
 }
 
@@ -349,72 +353,6 @@ function editPrice(symbol) {
 }
 
 // ═══════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════
-
-function toFa(num) {
-  const p = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
-  return String(num).replace(/\d/g, d => p[d]);
-}
-
-function formatTime(iso) {
-  if (!iso) return '-';
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = (now - d) / 1000;
-  if (diff < 60) return 'همین الان';
-  if (diff < 3600) return Math.floor(diff / 60) + ' دقیقه پیش';
-  if (diff < 86400) return Math.floor(diff / 3600) + ' ساعت پیش';
-  if (diff < 604800) return Math.floor(diff / 86400) + ' روز پیش';
-  return d.toLocaleDateString('fa-IR');
-}
-
-function formatDate(iso) {
-  if (!iso) return '-';
-  return new Date(iso).toLocaleDateString('fa-IR');
-}
-
-function getTxTypeName(type) {
-  const names = {
-    'transfer': 'انتقال',
-    'invite_reward': 'جایزه دعوت',
-    'invite_reward_owner': 'جایزه صاحب کد',
-    'reward': 'جایزه',
-    'stake_interest': 'سود سپرده'
-  };
-  return names[type] || type;
-}
-
-function showToast(msg, type = '') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.className = 'toast', 3000);
-}
-
-function toggleTheme() {
-  document.body.classList.toggle('light-mode');
-  localStorage.setItem('tat_admin_theme', 
-    document.body.classList.contains('light-mode') ? 'light' : 'dark');
-}
-
-// لود تم از localStorage
-if (localStorage.getItem('tat_admin_theme') === 'light') {
-  document.body.classList.add('light-mode');
-}
-
-function refreshData() {
-  const currentPage = document.querySelector('.page.active')?.dataset.page;
-  if (currentPage === 'dashboard') loadDashboard();
-  else if (currentPage === 'users') loadUsers();
-  else if (currentPage === 'transactions') loadTransactions();
-  else if (currentPage === 'invite-codes') loadInviteCodes();
-  else if (currentPage === 'prices') loadPrices();
-  showToast('بروزرسانی شد 🔄', 'success');
-}
-
-// ═══════════════════════════════════════
 // USER MANAGEMENT
 // ═══════════════════════════════════════
 
@@ -472,10 +410,6 @@ function viewUser(userId) {
       <span>تاریخ عضویت:</span>
       <span>${formatDate(user.created_at)}</span>
     </div>
-    <div class="user-detail-row">
-      <span>آخرین ورود:</span>
-      <span>${formatTime(user.last_login)}</span>
-    </div>
   `;
 
   document.getElementById('userModal').classList.add('active');
@@ -485,7 +419,6 @@ function closeUserModal() {
   document.getElementById('userModal').classList.remove('active');
 }
 
-// ویرایش موجودی
 function editBalance(userId) {
   const user = adminState.users.find(u => u.id === userId);
   if (!user) return;
@@ -532,7 +465,6 @@ async function submitBalanceChange() {
   try {
     const result = await apiUpdateUserBalance(currentUserId, finalAmount, reason);
 
-    // آپدیت local state
     const user = adminState.users.find(u => u.id === currentUserId);
     if (user) user.balance = result.newBalance;
 
@@ -550,7 +482,6 @@ async function submitBalanceChange() {
   }
 }
 
-// قفل/آزاد
 async function toggleBlock(userId, block) {
   const action = block ? 'قفل' : 'آزاد';
   if (!confirm(`مطمئنی می‌خوای کاربر رو ${action} کنی؟`)) return;
@@ -570,18 +501,11 @@ async function toggleBlock(userId, block) {
   }
 }
 
-// بستن modal با کلیک بیرون
-document.addEventListener('click', (e) => {
-  if (e.target.id === 'userModal') closeUserModal();
-  if (e.target.id === 'balanceModal') closeBalanceModal();
-});
-
 // ═══════════════════════════════════════
 // MINT / BURN
 // ═══════════════════════════════════════
 
 function loadMintBurn() {
-  // پر کردن datalist کاربران
   const datalistMint = document.getElementById('usersListMint');
   const datalistBurn = document.getElementById('usersListBurn');
   
@@ -634,12 +558,10 @@ async function doMint() {
   try {
     await apiUpdateUserBalance(user.id, amount, reason || 'چاپ توسط ادمین');
     
-    // آپدیت local
     user.balance = parseFloat(user.balance) + amount;
     
     showToast(`✅ ${toFa(amount)} TAT برای ${user.name} چاپ شد`, 'success');
     
-    // پاک کردن فرم
     document.getElementById('mintUserSearch').value = '';
     document.getElementById('mintAmount').value = '';
     document.getElementById('mintReason').value = '';
@@ -674,7 +596,7 @@ async function doBurn() {
   }
 
   if (parseFloat(user.balance) < amount) {
-    showToast(`موجودی ${user.name} کافی نیست (${toFa(Math.floor(user.balance))} TAT)`, 'error');
+    showToast(`موجودی ${user.name} کافی نیست`, 'error');
     return;
   }
 
@@ -683,12 +605,10 @@ async function doBurn() {
   try {
     await apiUpdateUserBalance(user.id, -amount, reason || 'سوزاندن توسط ادمین');
     
-    // آپدیت local
     user.balance = parseFloat(user.balance) - amount;
     
     showToast(`🔥 ${toFa(amount)} TAT از ${user.name} سوزونده شد`, 'success');
     
-    // پاک کردن فرم
     document.getElementById('burnUserSearch').value = '';
     document.getElementById('burnAmount').value = '';
     document.getElementById('burnReason').value = '';
@@ -713,6 +633,7 @@ async function loadMintBurnHistory() {
     ).slice(0, 20);
 
     const container = document.getElementById('mintBurnHistory');
+    if (!container) return;
     
     if (!mintBurn.length) {
       container.innerHTML = '<div class="loading">تاریخچه‌ای وجود ندارد</div>';
@@ -738,3 +659,78 @@ async function loadMintBurnHistory() {
     console.error('loadMintBurnHistory error:', error);
   }
 }
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+
+function toFa(num) {
+  const p = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  return String(num).replace(/\d/g, d => p[d]);
+}
+
+function formatTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'همین الان';
+  if (diff < 3600) return Math.floor(diff / 60) + ' دقیقه پیش';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' ساعت پیش';
+  if (diff < 604800) return Math.floor(diff / 86400) + ' روز پیش';
+  return d.toLocaleDateString('fa-IR');
+}
+
+function formatDate(iso) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('fa-IR');
+}
+
+function getTxTypeName(type) {
+  const names = {
+    'transfer': 'انتقال',
+    'invite_reward': 'جایزه دعوت',
+    'invite_reward_owner': 'جایزه صاحب کد',
+    'reward': 'جایزه',
+    'stake_interest': 'سود سپرده',
+    'admin_credit': 'افزایش ادمین',
+    'admin_debit': 'کاهش ادمین',
+    'mint': 'چاپ',
+    'burn': 'سوزاندن'
+  };
+  return names[type] || type;
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast', 3000);
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  localStorage.setItem('tat_admin_theme', 
+    document.body.classList.contains('light-mode') ? 'light' : 'dark');
+}
+
+if (localStorage.getItem('tat_admin_theme') === 'light') {
+  document.body.classList.add('light-mode');
+}
+
+function refreshData() {
+  const currentPage = document.querySelector('.page.active')?.dataset.page;
+  if (currentPage === 'dashboard') loadDashboard();
+  else if (currentPage === 'users') loadUsers();
+  else if (currentPage === 'transactions') loadTransactions();
+  else if (currentPage === 'invite-codes') loadInviteCodes();
+  else if (currentPage === 'prices') loadPrices();
+  else if (currentPage === 'mint-burn') loadMintBurn();
+  showToast('بروزرسانی شد 🔄', 'success');
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'userModal') closeUserModal();
+  if (e.target.id === 'balanceModal') closeBalanceModal();
+});
