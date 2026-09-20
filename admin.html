@@ -412,27 +412,88 @@
   </div>
 </section>
     <!-- ═══ صفحه گزارش‌ها ═══ -->
-    <section class="page" data-page="reports">
-      <div class="page-header">
-        <h2>📊 گزارش‌ها</h2>
+<section class="page" data-page="reports">
+  <div class="page-header">
+    <h2>📊 گزارش‌ها</h2>
+    <div class="report-tabs-inline">
+      <button class="report-tab-inline active" onclick="setReportRange('today', this)">امروز</button>
+      <button class="report-tab-inline" onclick="setReportRange('week', this)">هفته</button>
+      <button class="report-tab-inline" onclick="setReportRange('month', this)">ماه</button>
+      <button class="report-tab-inline" onclick="setReportRange('all', this)">همه</button>
+    </div>
+  </div>
+
+  <!-- کارت‌های آماری -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(16,185,129,0.15); color:#10B981;">📥</div>
+      <div class="stat-info">
+        <div class="stat-label">واریز</div>
+        <div class="stat-value" id="reportIn" style="color:#10B981;">۰</div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(59,130,246,0.15); color:#3B82F6;">📥</div>
-          <div class="stat-info">
-            <div class="stat-label">واریز امروز</div>
-            <div class="stat-value" id="reportIn">۰</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(239,68,68,0.15); color:#EF4444;">📤</div>
-          <div class="stat-info">
-            <div class="stat-label">برداشت امروز</div>
-            <div class="stat-value" id="reportOut">۰</div>
-          </div>
-        </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(239,68,68,0.15); color:#EF4444;">📤</div>
+      <div class="stat-info">
+        <div class="stat-label">برداشت</div>
+        <div class="stat-value" id="reportOut" style="color:#EF4444;">۰</div>
       </div>
-    </section>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(59,130,246,0.15); color:#3B82F6;">🔄</div>
+      <div class="stat-info">
+        <div class="stat-label">تعداد تراکنش</div>
+        <div class="stat-value" id="reportCount">۰</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(245,158,11,0.15); color:#F59E0B;">💰</div>
+      <div class="stat-info">
+        <div class="stat-label">کارمزد کل</div>
+        <div class="stat-value" id="reportFee" style="color:#F59E0B;">۰</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- نمودار تراکنش‌ها -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3>📈 نمودار تراکنش‌ها</h3>
+    </div>
+    <div class="bar-chart" id="txChart">
+      <div class="loading">در حال بارگذاری...</div>
+    </div>
+  </div>
+
+  <!-- جدول تراکنش‌ها -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h3>📋 جزئیات تراکنش‌ها</h3>
+      <button class="btn-export" onclick="exportReport()">
+        📥 خروجی Excel
+      </button>
+    </div>
+    <div class="table-container" style="background:transparent; border:none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>کد پیگیری</th>
+            <th>نوع</th>
+            <th>مقدار</th>
+            <th>کارمزد</th>
+            <th>تاریخ</th>
+          </tr>
+        </thead>
+        <tbody id="reportTableBody">
+          <tr><td colspan="5" class="loading">در حال بارگذاری...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
 
     <!-- ═══ صفحه تنظیمات ═══ -->
 <section class="page" data-page="settings">
