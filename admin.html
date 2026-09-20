@@ -435,30 +435,82 @@
     </section>
 
     <!-- ═══ صفحه تنظیمات ═══ -->
-    <section class="page" data-page="settings">
-      <div class="page-header">
-        <h2>⚙️ تنظیمات</h2>
-      </div>
-      <div class="settings-card">
-        <h3>اطلاعات ادمین</h3>
-        <div class="settings-row">
-          <span>ایمیل:</span>
-          <span id="settingsEmail">-</span>
-        </div>
-        <div class="settings-row">
-          <span>نام:</span>
-          <span id="settingsName">-</span>
-        </div>
-        <div class="settings-row">
-          <span>نقش:</span>
-          <span id="settingsRole">-</span>
-        </div>
-        <button class="btn-danger" onclick="handleLogout()">🚪 خروج از پنل</button>
-      </div>
-    </section>
+<section class="page" data-page="settings">
+  <div class="page-header">
+    <h2>⚙️ تنظیمات سیستم</h2>
+  </div>
 
-  </main>
-</div>
+  <!-- اطلاعات ادمین -->
+  <div class="settings-card" style="margin-bottom:20px;">
+    <h3>👤 اطلاعات ادمین</h3>
+    <div class="settings-row">
+      <span>ایمیل:</span>
+      <span id="settingsEmail">-</span>
+    </div>
+    <div class="settings-row">
+      <span>نام:</span>
+      <span id="settingsName">-</span>
+    </div>
+    <div class="settings-row">
+      <span>نقش:</span>
+      <span id="settingsRole">-</span>
+    </div>
+  </div>
+
+  <!-- کارمزدها -->
+  <div class="settings-card" style="margin-bottom:20px;">
+    <h3>💰 کارمزدها</h3>
+    <div class="settings-row" style="align-items:center;">
+      <span>کارمزد انتقال TAT (٪):</span>
+      <input type="number" id="feeTransfer" step="0.1" min="0" max="100" 
+             style="width:120px; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; text-align:center;">
+    </div>
+    <div class="settings-row" style="align-items:center;">
+      <span>کارمزد معاملات (٪):</span>
+      <input type="number" id="feeTrade" step="0.1" min="0" max="100"
+             style="width:120px; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; text-align:center;">
+    </div>
+    <button class="btn-primary" onclick="saveFees()" style="margin-top:12px;">ذخیره کارمزدها</button>
+  </div>
+
+  <!-- جایزه دعوت -->
+  <div class="settings-card" style="margin-bottom:20px;">
+    <h3>🎁 جایزه دعوت</h3>
+    <div class="settings-row" style="align-items:center;">
+      <span>جایزه صاحب کد (TAT):</span>
+      <input type="number" id="rewardOwner" min="0"
+             style="width:120px; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; text-align:center;">
+    </div>
+    <div class="settings-row" style="align-items:center;">
+      <span>جایزه کاربر جدید (TAT):</span>
+      <input type="number" id="rewardUser" min="0"
+             style="width:120px; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; text-align:center;">
+    </div>
+    <button class="btn-primary" onclick="saveRewards()" style="margin-top:12px;">ذخیره جایزه‌ها</button>
+  </div>
+
+  <!-- محدودیت‌ها -->
+  <div class="settings-card" style="margin-bottom:20px;">
+    <h3>🔐 محدودیت‌ها</h3>
+    <div class="settings-row" style="align-items:center;">
+      <span>حداکثر کد دعوت فعال:</span>
+      <input type="number" id="maxInviteCodes" min="1"
+             style="width:120px; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; text-align:center;">
+    </div>
+    <div class="settings-row" style="align-items:center;">
+      <span>حداکثر تراکنش روزانه:</span>
+      <input type="number" id="maxDailyTx" min="1"
+             style="width:120px; padding:8px 12px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:inherit; text-align:center;">
+    </div>
+    <button class="btn-primary" onclick="saveLimits()" style="margin-top:12px;">ذخیره محدودیت‌ها</button>
+  </div>
+
+  <!-- خروج -->
+  <div class="settings-card">
+    <h3>🚪 خروج</h3>
+    <button class="btn-danger" onclick="handleLogout()">خروج از پنل</button>
+  </div>
+</section>
 
 <!-- ═══ Toast ═══ -->
 <div class="toast" id="toast"></div>

@@ -141,6 +141,7 @@ function goTo(pageName) {
   else if (pageName === 'invite-codes') loadInviteCodes();
   else if (pageName === 'prices') loadPrices();
   else if (pageName === 'mint-burn') loadMintBurn();
+  else if (pageName === 'settings') loadSettings();
 }
 
 // ═══════════════════════════════════════
@@ -734,3 +735,88 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'userModal') closeUserModal();
   if (e.target.id === 'balanceModal') closeBalanceModal();
 });
+
+// ═══════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════
+
+async function loadSettings() {
+  try {
+    const settings = await apiGetSettings();
+    
+    // کارمزدها
+    if (settings.fees) {
+      document.getElementById('feeTransfer').value = settings.fees.transfer || 0.5;
+      document.getElementById('feeTrade').value = settings.fees.trade || 1;
+    }
+    
+    // جایزه دعوت
+    if (settings.rewards) {
+      document.getElementById('rewardOwner').value = settings.rewards.invite_owner || 100;
+      document.getElementById('rewardUser').value = settings.rewards.invite_user || 50;
+    }
+    
+    // محدودیت‌ها
+    if (settings.limits) {
+      document.getElementById('maxInviteCodes').value = settings.limits.max_invite_codes || 10;
+      document.getElementById('maxDailyTx').value = settings.limits.max_daily_tx || 100;
+    }
+
+  } catch (error) {
+    console.error('loadSettings error:', error);
+  }
+}
+
+async function saveFees() {
+  const transfer = parseFloat(document.getElementById('feeTransfer').value);
+  const trade = parseFloat(document.getElementById('feeTrade').value);
+
+  if (isNaN(transfer) || isNaN(trade)) {
+    showToast('مقادیر معتبر وارد کن', 'error');
+    return;
+  }
+
+  try {
+    await apiUpdateSetting('fees', { transfer, trade });
+    showToast('کارمزدها ذخیره شد ✅', 'success');
+  } catch (error) {
+    console.error('saveFees error:', error);
+    showToast(error.message || 'خطا', 'error');
+  }
+}
+
+async function saveRewards() {
+  const owner = parseFloat(document.getElementById('rewardOwner').value);
+  const user = parseFloat(document.getElementById('rewardUser').value);
+
+  if (isNaN(owner) || isNaN(user)) {
+    showToast('مقادیر معتبر وارد کن', 'error');
+    return;
+  }
+
+  try {
+    await apiUpdateSetting('rewards', { invite_owner: owner, invite_user: user });
+    showToast('جایزه‌ها ذخیره شد ✅', 'success');
+  } catch (error) {
+    console.error('saveRewards error:', error);
+    showToast(error.message || 'خطا', 'error');
+  }
+}
+
+async function saveLimits() {
+  const maxInviteCodes = parseInt(document.getElementById('maxInviteCodes').value);
+  const maxDailyTx = parseInt(document.getElementById('maxDailyTx').value);
+
+  if (isNaN(maxInviteCodes) || isNaN(maxDailyTx)) {
+    showToast('مقادیر معتبر وارد کن', 'error');
+    return;
+  }
+
+  try {
+    await apiUpdateSetting('limits', { max_invite_codes: maxInviteCodes, max_daily_tx: maxDailyTx });
+    showToast('محدودیت‌ها ذخیره شد ✅', 'success');
+  } catch (error) {
+    console.error('saveLimits error:', error);
+    showToast(error.message || 'خطا', 'error');
+  }
+}
